@@ -286,7 +286,11 @@ def kitty_background():
 
 def terminal_background():
     """The terminal's background colour, so the pane blends in rather than
-    sitting in a black box: Ghostty's `background` or its theme's, or kitty's."""
+    sitting in a black box: DOOMSCROLL_BACKGROUND if set, Ghostty's `background`
+    or its theme's, or kitty's."""
+    override = normalise_hex(os.environ.get("DOOMSCROLL_BACKGROUND", ""))
+    if override:
+        return override
     if os.environ.get("KITTY_WINDOW_ID") or os.environ.get("TERM") == "xterm-kitty":
         return kitty_background()
     if os.environ.get("TERM_PROGRAM", "").lower() != "ghostty":
@@ -545,6 +549,7 @@ class Downloader:
         self.on_done = on_done
         self.cv = threading.Condition()
         self.wanted = []
+        self.in_use = set()  # the file the player has open, kept by _trim
         self.status = {}
         self.meta = {}
         for _ in range(3):
@@ -595,7 +600,7 @@ class Downloader:
         partial = os.path.join(self.folder, item["id"] + ".dl.%(ext)s")
         try:
             subprocess.run(
-                ["yt-dlp", "-q", "--no-warnings", "--no-progress", "--no-playlist",
+                ["yt-dlp", "-q", "--no-warnings", "--no-progress", "--no-playlist", "--no-mtime",
                  "-S", "res:1280", "-f", "b", "-o", partial, item["url"]],
                 capture_output=True, text=True, timeout=180,
             )
@@ -641,10 +646,11 @@ class Downloader:
             return
         if len(files) <= KEEP_VIDEOS:
             return
-        keep = {self.path(i) for i in self.wanted}
+        keep = {self.path(i) for i in self.wanted} | self.in_use
+        fresh = time.time() - 15 * 60  # never anything fetched in the last quarter hour
         files.sort(key=lambda p: os.path.getmtime(p))
         for path in files[: len(files) - KEEP_VIDEOS]:
-            if path in keep:
+            if path in keep or os.path.getmtime(path) > fresh:
                 continue
             try:
                 os.remove(path)
@@ -987,7 +993,8 @@ class Daemon:
                 message = (f"Doomscroll needs {', '.join(self.missing)}. "
                            f"Install with: {install_hint(self.missing)}, then /doomscroll.")
             elif item is not None and self.want_play:
-                status = "playing" if self.downloads.ready(item) else "loading"
+                ready = self.downloads.ready(item) or self.player.running() or self.is_sliding
+                status = "playing" if ready else "loading"
             elif item is not None:
                 status = "paused"
             elif self.feed.is_loading() or not self.feed.creators:
@@ -1093,6 +1100,7 @@ class Daemon:
         size = self.frame_size()
         audio = not self.muted and meta.get("audio", True)
         self.player.stop()
+        self.downloads.in_use = {self.downloads.path(item)}
         threading.Thread(
             target=self.player.start,
             args=(self.downloads.path(item), start, duration, size, audio),

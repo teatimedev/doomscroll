@@ -79,7 +79,7 @@ Commands:
 - **Sound on** (on): whether a new session starts with sound
 - **Open while Claude works** (on): off means only `/doomscroll` opens the pane
 
-Environment variables: `DOOMSCROLL_MUTED=1` forces silence, and `DOOMSCROLL_TRANSPORT=file` hands frames to the terminal as files instead of shared memory. Try the second if the picture stays blank.
+Environment variables: `DOOMSCROLL_MUTED=1` forces silence, `DOOMSCROLL_BACKGROUND=#rrggbb` sets the pane's background when Doomscroll can't read your terminal's, and `DOOMSCROLL_TRANSPORT=file` hands frames to the terminal as files instead of shared memory. Try the last if the picture stays blank.
 
 ## What it runs, fetches and stores
 
@@ -107,6 +107,7 @@ A mod runs with your permissions, so here is everything this one does. `claude p
 claude --plugin-dir .                        # load it for one session
 claude plugin validate --strict .claude-plugin/plugin.json
 claude plugin test .                         # the mod's tests, with a fake player
+python3 -m unittest discover -s tests -p 'test_*.py'   # the player's tests
 ```
 
 `hooks/register.tsx` draws the pane and drives the player. `bin/doomscrolld.py` is the player: feed, downloads, decoding, the swipe animation and audio. `types/index.d.ts` declares the state the pane draws from.

@@ -17,6 +17,9 @@ jobs:
       - name: Player compiles on the oldest supported Python
         run: python -m py_compile bin/doomscrolld.py
 
+      - name: Player unit tests
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"

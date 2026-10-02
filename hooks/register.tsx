@@ -430,7 +430,8 @@ export const register: Register = (on, options) => {
   on('turn.complete', async ($, e, next) => {
     const done = await next(e)
     if (!isActive || e.agentId !== undefined) return done // a subagent's turn; the main one runs on
-    const wasPlaying = (await read($, view)).status === 'playing'
+    const { status } = await read($, view)
+    const wasPlaying = status === 'playing' || status === 'loading'
     await update($, isDone, () => wasPlaying)
     await update($, isWorking, () => false)
     await update($, isHeld, () => false)
