@@ -2,7 +2,7 @@
 
 A TikTok-style video feed in a pane beside Claude Code. It opens when Claude starts working, plays while Claude works, swipes to the next video with your mouse wheel, and pauses the moment Claude is done: *Claude's done. Back to work.*
 
-<p align="center"><img src="docs/pane.jpg" alt="The Doomscroll pane beside a Claude Code session: a vertical video, its likes and comments, and the caption underneath" width="420"></p>
+<p align="center"><img src="docs/hero.jpg" alt="Claude Code writing code on the left while the Doomscroll pane plays a TikTok on the right, with likes, comments and the caption beside and below it" width="900"></p>
 
 It is a [Claude Code mod](https://code.claude.com/docs/en/plugins/mods/overview): a plugin of function hooks that draws its own pane. The video is real video, decoded with ffmpeg and drawn with the kitty graphics protocol, at 30 frames a second, with sound.
 
