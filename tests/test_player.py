@@ -41,6 +41,34 @@ class TrimTest(unittest.TestCase):
         self.assertLessEqual(len(left), d.KEEP_VIDEOS + 3)
 
 
+class ReadyTest(unittest.TestCase):
+    def test_a_missing_file_is_not_ready_and_is_fetched_again(self):
+        folder = tempfile.mkdtemp()
+        downloads = d.Downloader(folder, lambda *_: None)
+        attempts = []
+        downloads._download = lambda item: attempts.append(item["id"]) or False  # no network
+        video = {"id": "gone"}
+        downloads.status["gone"] = "done"  # marked done, then trimmed away
+        self.assertFalse(downloads.ready(video))
+        downloads.want([video])
+        deadline = time.time() + 5
+        while not attempts and time.time() < deadline:
+            time.sleep(0.02)
+        self.assertEqual(attempts, ["gone"])  # queued and fetched again
+
+    def test_wanting_a_file_refreshes_it(self):
+        folder = tempfile.mkdtemp()
+        downloads = d.Downloader(folder, lambda *_: None)
+        video = {"id": "kept"}
+        path = downloads.path(video)
+        open(path, "w").close()
+        os.utime(path, (1, 1))
+        downloads._probe = lambda _p: {"audio": True, "duration": 10}
+        downloads.want([video])
+        self.assertGreater(os.path.getmtime(path), time.time() - 60)
+        self.assertTrue(downloads.ready(video))
+
+
 class FeedTest(unittest.TestCase):
     def feed(self):
         feed = d.Feed(tempfile.mkdtemp(), [], lambda: None)

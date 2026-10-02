@@ -1,7 +1,7 @@
 {
   "name": "doomscroll",
   "displayName": "Doomscroll",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A TikTok-style video feed in a pane beside Claude Code. It plays while Claude works, scrolls with your mouse wheel, and pauses when Claude is done.",
   "author": {
     "name": "Jordan Rippon",

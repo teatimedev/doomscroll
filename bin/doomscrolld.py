@@ -559,7 +559,8 @@ class Downloader:
         return os.path.join(self.folder, item["id"] + ".mp4")
 
     def ready(self, item):
-        return item is not None and self.status.get(item["id"]) == "done"
+        return (item is not None and self.status.get(item["id"]) == "done"
+                and os.path.exists(self.path(item)))
 
     def failed(self, item):
         return item is not None and self.status.get(item["id"]) == "failed"
@@ -568,8 +569,17 @@ class Downloader:
         with self.cv:
             self.wanted = [i for i in items if i]
             for item in self.wanted:
-                if item["id"] not in self.status and os.path.exists(self.path(item)):
-                    probe = self._probe(self.path(item))
+                path = self.path(item)
+                exists = os.path.exists(path)
+                if exists:
+                    try:
+                        os.utime(path)  # in use again: the trim keeps fresh files
+                    except OSError:
+                        pass
+                if self.status.get(item["id"]) == "done" and not exists:
+                    del self.status[item["id"]]  # gone from the cache: fetch it again
+                if item["id"] not in self.status and exists:
+                    probe = self._probe(path)
                     if probe:
                         self.meta[item["id"]] = probe
                         self.status[item["id"]] = "done"
